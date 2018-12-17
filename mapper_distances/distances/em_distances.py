@@ -499,7 +499,7 @@ def gromov_wasserstein_aug(net1, net2, metric_space):
     return gw_dist
 
 
-def fused_gromov_wasserstein_aug(net1, net2, metric_space, p=None, q=None):
+def naw_distance(net1, net2, metric_space, p=None, q=None):
     C1 = network_merge_distance(net1, net1, metric_space)
     C1 = C1  # /C1.max()
     C1_span = sparse.csgraph.minimum_spanning_tree(C1)
