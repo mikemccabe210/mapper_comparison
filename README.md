@@ -30,7 +30,29 @@ graphs as metric-measure spaces and introduces a Wasserstein distance variant,
 ## Usage
 
 This repo comes equipped with the actual distance measures and with a lightweight 
-mapper implementation that the distance measures are built around.
+mapper implementation that the distance measures are built around. The mapper builder
+objects automatically create a networkx object that can be used for visualization. The
+basic procedure for generating a network and using a network metric is:
+
+```python
+from lightweight_mapper.clustering import SingleLinkageHistogram
+from lightweight_mapper.networks import Network, Cover, Partition
+from lightweight_mapper.partitioners import UniformPartitioner
+from distances import naw_distance
+
+metric_space = pairwise_distances(X) # Create finite metric space
+partition = UniformPartitioner() # Create partitioner
+cover1 = partition.fit_transform(X[:, 0], 130, .7, 'PCA1') # Define cover parameters
+cover2 = partition.fit_transform(X[:, 1], 130, .7, 'PCA2') # Define cover parameters
+cover = [cover1, cover2] # Create cross product cover
+cluster = SingleLinkageHistogram(metric='precomputed', threshold = 'histogram') # Any sklearn API compatible clusterer
+
+network1 = Network(metric_space, cover, cluster, prune=True)
+
+...
+
+distance = naw_distance(network1, network2, metric_space)
+```
 
 
 ## Examples
