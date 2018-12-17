@@ -9,7 +9,6 @@ class Cover():
     """ Cover of discrete metric space. Contains list of partitions.
 
     """
-
     def __init__(self, partitions):
         """
 
@@ -17,6 +16,7 @@ class Cover():
         ----------
         partitions
         """
+#         self.partitions_ = self.remove_duplicates(partitions)
         self.partitions_ = partitions
 
     def cross(self, other_cover):
@@ -39,7 +39,7 @@ class Cover():
     def remove_duplicates(self, partition_list):
         return_list = []
         for i, p1 in enumerate(partition_list):
-            for j, p2 in enumerate(partition_list[i + 1:]):
+            for j, p2 in enumerate(partition_list[i+1:]):
                 if p1.members_ and p1.members_ == p2.members_:
                     break
             else:
@@ -53,8 +53,7 @@ class Partition():
     Contains members and bounds
 
     """
-
-    def __init__(self, subset, subset_description=[]):
+    def __init__(self, subset, subset_description = []):
         """
 
         Parameters

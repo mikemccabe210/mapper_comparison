@@ -27,6 +27,7 @@ class Network():
     def __init__(self, metric_space, cover_list, clusterer,
                  prune=True, backend='networkx'):
         # build metric space as distance matrix
+        self.partition_node_map = {}
         self.N = metric_space.shape[0]
         self.cover = self.build_cover(cover_list)
         self.node_row_matrix = self.build_topological_model(metric_space, self.cover, clusterer)
@@ -37,7 +38,38 @@ class Network():
             self.raw_node_row_matrix = self.node_row_matrix
             self.raw_adjacency_matrix = self.adjacency_matrix
             self.raw_cooccurence_matrix = self.cooccurence_matrix
+            partition_keys = sorted(self.partition_node_map.keys())
+            re_index = 0
+            new_partition_node_map = {}
+            for node in partition_keys:
+                if node in pruned_node_set:
+                    new_partition_node_map[re_index] = self.partition_node_map[node]
+                    re_index += 1
+            self.partition_node_map = new_partition_node_map
+            self.node_row_matrix = self.node_row_matrix[pruned_node_set, :]
+            self.adjacency_matrix = self.node_row_matrix.dot(self.node_row_matrix.T)
+            self.cooccurence_matrix = self.node_row_matrix.T.dot(self.node_row_matrix)
 
+        self.graph = nx.from_scipy_sparse_matrix(self.adjacency_matrix)
+
+    def refresh(self, prune = True):
+        """ Refreshes to deal with manual changes to node_row"""
+        self.adjacency_matrix = self.node_row_matrix.dot(self.node_row_matrix.T)
+        self.cooccurence_matrix = self.node_row_matrix.T.dot(self.node_row_matrix)
+        if prune:
+            pruned_node_set = self._prune(self.adjacency_matrix)
+
+            self.raw_node_row_matrix = self.node_row_matrix
+            self.raw_adjacency_matrix = self.adjacency_matrix
+            self.raw_cooccurence_matrix = self.cooccurence_matrix
+            partition_keys = sorted(self.partition_node_map.keys())
+            re_index = 0
+            new_partition_node_map = {}
+            for node in partition_keys:
+                if node in pruned_node_set:
+                    new_partition_node_map[re_index] = self.partition_node_map[node]
+                    re_index += 1
+            self.partition_node_map = new_partition_node_map
             self.node_row_matrix = self.node_row_matrix[pruned_node_set, :]
             self.adjacency_matrix = self.node_row_matrix.dot(self.node_row_matrix.T)
             self.cooccurence_matrix = self.node_row_matrix.T.dot(self.node_row_matrix)
@@ -69,8 +101,8 @@ class Network():
 
         """
         partition_list = []
-        for row in self.node_row_matrix:
-            members = np.where(row > 0)
+        for i in range(self.node_row_matrix.shape[0]):
+            members = np.where(self.node_row_matrix[i, :].toarray() > 0)[1]
             new_desc = [{'description': 'Copied from network'}]
             part = Partition(set(members), new_desc)
             partition_list.append(part)
@@ -90,27 +122,38 @@ class Network():
         -------
 
         """
+        self.partition_node_map = {}
         rows = []
         cols = []
         values = []
         max_cluster = 0
         node_sets = set()
-        for partition in cover.partitions_:
+        for ind, partition in enumerate(cover.partitions_):
             sub_rows = []
             p_index = list(partition.members_)
             if len(p_index) >= 3:
                 model = self._sub_cluster(metric_space[p_index, :][:, p_index], clusterer)
-                labels = model.labels_ - np.min(model.labels_)
+                labels = model.labels_
+                max_label = labels.max() + 1
                 for i, label in enumerate(labels):
-                    cols.append(p_index[i])
-                    sub_rows.append(label + max_cluster)
-                    values.append(1)
+                    if label == -1:
+                        cols.append(p_index[i])
+                        sub_rows.append(max_label + max_cluster)
+                        max_label += 1
+                        values.append(1)
+                        self.partition_node_map[max_label + max_cluster] = ind
+                    else:
+                        cols.append(p_index[i])
+                        sub_rows.append(label + max_cluster)
+                        values.append(1)
+                        self.partition_node_map[label + max_cluster] = ind
                 max_cluster = max(sub_rows) + 1
                 rows.extend(sub_rows)
             elif len(p_index) > 0:
-                cols.append(p_index[0])
-                rows.append(max_cluster)
-                values.append(1)
+                cols.extend(p_index)
+                rows.extend([max_cluster] * len(p_index))
+                values.extend([1] * len(p_index))
+                self.partition_node_map[max_cluster] = ind
                 max_cluster += 1
 
             else:
@@ -121,7 +164,8 @@ class Network():
         return node_row_matrix.tocsr()
 
     def _prune(self, adj):
-        """
+        """ Cleans up the graph by removing nodes that are wholly contained within
+        their neighbors.
         """
         n = adj.shape[0]
         delete_nodes = set()

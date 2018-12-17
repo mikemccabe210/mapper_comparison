@@ -5,6 +5,29 @@ Contains partition objects for building covers.
 
 from __future__ import division
 import numpy as np
+from ..networks import Cover, Partition
+
+
+class PartitionerBase():
+    """
+
+    """
+
+    def __init__(self):
+        pass
+
+    def fit_transform(self, filter_values, resolution,
+                      overlap, description):
+        raise NotImplementedError
+
+    def remove_duplicates(self, partition_list):
+        return_list = []
+        for i, p1 in enumerate(partition_list):
+            for j, p2 in enumerate(partition_list[i + 1:]):
+                if p1 == p2:
+                    break
+            else:
+                return_list.append(p1)
 
 
 class PartitionerBase():
@@ -35,7 +58,7 @@ class UniformPartitioner(PartitionerBase):
     """
 
     def fit_transform(self, filter_values, resolution,
-                      overlap, description):
+                      overlap, description, indexes=None):
         """
 
         Parameters
@@ -72,7 +95,11 @@ class UniformPartitioner(PartitionerBase):
             upperI = (bottom + (ilen * (i + 1))) + delta
 
             vals = np.where((filter_values >= lowerI) & (filter_values <= upperI))[0]
-            new_set = set(vals)
+            if indexes is None:
+                new_set = set(vals)
+            else:
+                new_set = set(indexes[vals])
+
             new_desc = [{'min': lowerI,
                          'max': upperI,
                          'description': description}]
@@ -92,8 +119,8 @@ class EqualizedPartitioner(PartitionerBase):
 
         Parameters
         ----------
-        filter_values
-        resolution
+        filter_values - list[float]
+        resolution -
         overlap
         description
 
@@ -114,27 +141,65 @@ class EqualizedPartitioner(PartitionerBase):
         argsort_filter = np.argsort(filter_values)
         uniform = UniformPartitioner()
         partition_list = []
-        #         for subset in uniform.fit_transform(sps.rankdata(filter_values, 'dense') - 1, resolution,
-        #                                      overlap, description).partitions_:
-        for subset in uniform.fit_transform(np.arange(filter_values.shape[0]), resolution,
+        for subset in uniform.fit_transform(sps.rankdata(filter_values, 'dense') - 1, resolution,
                                             overlap, description).partitions_:
+            #         for subset in uniform.fit_transform(np.arange(filter_values.shape[0]), resolution,
+            #                                      overlap, description).partitions_:
             new_set = argsort_filter[list(subset.members_)]
             new_desc = [{'min': min(filter_values[new_set]),
                          'max': max(filter_values[new_set]),
                          'description': description}]
-            partition = Partition(set(new_set), new_desc)
+            partition = Partition(new_set, [{'description': new_desc}])
             partition_list.append(partition)
+
         return Cover(partition_list)
 
 
 class RandomPartitioner(PartitionerBase):
-    def fit_transform(self, filter_values, resolution, gain,
-                      description='Random'):
-        pass
+    def fit_transform(self, filter_values, resolution,
+                      overlap, description='Random'):
+        """
+
+        Parameters
+        ----------
+        filter_values
+        resolution
+        overlap
+        description
+
+        Returns
+        -------
+
+        """
+        p = overlap
+
+        p_list = []
+        used_rows = set()
+        future_ps = []
+        for i in range(resolution):
+            new_set = set()
+            for j in range(filter_values.shape[0]):
+                if np.random.rand() < p:
+                    new_set.add(j)
+                    used_rows.add(j)
+            future_ps.append(new_set)
+
+        while len(used_rows) < filter_values.shape[0]:
+            leftovers = set(range(filter_values.shape[0])) - used_rows
+            for new_set in future_ps:
+                for j in leftovers:
+                    if np.random.rand() < p:
+                        new_set.add(j)
+                        used_rows.add(j)
+        for new_set in future_ps:
+            partition = Partition(new_set, [{'description': description}])
+            p_list.append(partition)
+        return Cover(p_list)
 
 
 class PartitionExpander():
-    """
+    """ Expands a given cover by radius r within the metric space. This
+    is primarily used for node expansions.
     """
 
     def __init__(self):
