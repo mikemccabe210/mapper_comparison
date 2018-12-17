@@ -27,7 +27,12 @@ graphs as metric-measure spaces and introduces a Wasserstein distance variant,
  differences between the topological, metric, and density information represented
  by Mapper graphs. 
  
-## Examples
-
-
 ## Usage
+
+This repo comes equipped with the actual distance measures and with a lightweight 
+mapper implementation that the distance measures are built around.
+
+
+## Examples
+Examples can be found in [examples](https://github.com/mikemccabe210/mapper_comparison/) 
+
