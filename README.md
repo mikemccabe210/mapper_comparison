@@ -60,5 +60,5 @@ Examples can be found in [examples](https://github.com/mikemccabe210/mapper_comp
 
 ### References
 
-Michael McCabe. Mapper Comparison with Wasserstein Metrics. arXiv preprint arXiv:1812.06232, 2018. [[arxiv]](https://arxiv.org/abs/1812.06232)
+Michael McCabe. "Mapper Comparison with Wasserstein Metrics." *arXiv preprint arXiv:1812.06232*, 2018. [[arxiv]](https://arxiv.org/abs/1812.06232)
 
