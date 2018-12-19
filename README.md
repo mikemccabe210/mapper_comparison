@@ -1,7 +1,7 @@
 # Mapper Comparison
 
 Accompanying code for paper *Mapper Comparison with 
-Wasserstein Metrics*. Paper available in paper_pdf directory.
+Wasserstein Metrics*.
 
 This repo is intended for the evaluation of different candidate metrics for 
 comparing Mapper graphs. Mapper is an unsupervised learning algorithm based 
@@ -56,5 +56,9 @@ distance = naw_distance(network1, network2, metric_space)
 
 
 ## Examples
-Examples can be found in [examples](https://github.com/mikemccabe210/mapper_comparison/) 
+Examples can be found in [examples](https://github.com/mikemccabe210/mapper_comparison/) (Eventually)
+
+### References
+
+Michael McCabe. Mapper Comparison with Wasserstein Metrics. arXiv preprint arXiv:1812.06232, 2018. [[arxiv]](https://arxiv.org/abs/1812.06232)
 
